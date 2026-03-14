@@ -33,7 +33,7 @@ if(logged) loadClients()
 
 async function loadClients(){
 
-const res=await axios.get("http://localhost:3001/clients")
+const res=await axios.get("https://crm-whatsapp-w2an.onrender.com")
 
 setClients(res.data)
 
@@ -53,7 +53,7 @@ const formData=new FormData()
 
 formData.append("file",file)
 
-await axios.post("http://localhost:3001/import",formData)
+await axios.post("https://crm-whatsapp-w2an.onrender.com",formData)
 
 loadClients()
 
