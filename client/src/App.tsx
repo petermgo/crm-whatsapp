@@ -4,13 +4,15 @@ import Login from "./Login"
 
 import { MessageCircle, MapPin, Send, Search } from "lucide-react"
 
+const API_URL = "https://crm-whatsapp-w2an.onrender.com"
+
 type Client = {
-id:number
-nome:string
-telefone:string
-municipio:string
-modelo:string
-endereco:string
+  id:number
+  nome:string
+  telefone:string
+  municipio:string
+  modelo:string
+  endereco:string
 }
 
 export default function App(){
@@ -33,8 +35,7 @@ if(logged) loadClients()
 
 async function loadClients(){
 
-const res=await axios.get("https://crm-whatsapp-w2an.onrender.com")
-
+const res=await axios.get(`${API_URL}/clients`)
 setClients(res.data)
 
 }
@@ -53,7 +54,7 @@ const formData=new FormData()
 
 formData.append("file",file)
 
-await axios.post("https://crm-whatsapp-w2an.onrender.com",formData)
+await axios.post(`${API_URL}/upload`,formData)
 
 loadClients()
 
@@ -251,6 +252,7 @@ onClick={campanhaPecas}
 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
 
 Peças
+
 </button>
 
 <button
@@ -258,6 +260,7 @@ onClick={campanhaRevisao}
 className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg">
 
 Revisão
+
 </button>
 
 <button
@@ -265,6 +268,7 @@ onClick={campanhaPromocao}
 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
 
 Promoção
+
 </button>
 
 </div>
@@ -286,7 +290,6 @@ Enviar WhatsApp
 </button>
 
 </div>
-
 
 {/* DESKTOP TABLE */}
 
@@ -372,8 +375,7 @@ Mapa
 
 </div>
 
-
-{/* MOBILE CARDS */}
+{/* MOBILE */}
 
 <div className="md:hidden space-y-4">
 
