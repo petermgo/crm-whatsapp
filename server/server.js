@@ -5,100 +5,115 @@ const XLSX = require("xlsx")
 const Database = require("better-sqlite3")
 
 const app = express()
+const upload = multer({ dest: "uploads/" })
 
 app.use(cors())
 app.use(express.json())
 
-const upload = multer({ dest: "uploads/" })
+// ======================================
+// CONTROLE DE ACESSO
+// false = bloqueado
+// true = liberado
+// ======================================
+const APP_ACTIVE = false
 
-// banco de dados
-const db = new Database("clients.db")
+// Permite apenas a rota raiz quando bloqueado
+app.use((req, res, next) => {
+  const allowedRoutes = ["/"]
 
-// criar tabela
+  if (APP_ACTIVE || allowedRoutes.includes(req.path)) {
+    return next()
+  }
+
+  return res.status(403).json({
+    message: "Acesso suspenso por pendência financeira."
+  })
+})
+
+// ======================================
+// BANCO
+// ======================================
+const db = new Database("database.sqlite")
+
 db.prepare(`
 CREATE TABLE IF NOT EXISTS clients (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-nome TEXT,
-telefone TEXT,
-municipio TEXT,
-endereco TEXT,
-modelo TEXT,
-chassi TEXT,
-anoFabricacao TEXT
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT,
+  telefone TEXT,
+  municipio TEXT,
+  modelo TEXT,
+  endereco TEXT
 )
 `).run()
 
+// ======================================
+// ROTAS
+// ======================================
+
+// rota raiz
+app.get("/", (req, res) => {
+  res.send("CRM API rodando")
+})
 
 // listar clientes
 app.get("/clients", (req, res) => {
-
-const clients = db.prepare(`
-SELECT * FROM clients
-`).all()
-
-res.json(clients)
-
+  const clients = db.prepare("SELECT * FROM clients").all()
+  res.json(clients)
 })
-
 
 // importar planilha
-app.post("/import", upload.single("file"), (req, res) => {
+app.post("/upload", upload.single("file"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Nenhum arquivo enviado."
+      })
+    }
 
-const workbook = XLSX.readFile(req.file.path)
+    const workbook = XLSX.readFile(req.file.path)
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]
+    const data = XLSX.utils.sheet_to_json(sheet)
 
-const sheet = workbook.Sheets[workbook.SheetNames[0]]
+    const insert = db.prepare(`
+      INSERT INTO clients (nome, telefone, municipio, modelo, endereco)
+      VALUES (?, ?, ?, ?, ?)
+    `)
 
-const rows = XLSX.utils.sheet_to_json(sheet)
+    for (const row of data) {
+      insert.run(
+        row["Cliente Principal"] || row["Nome"] || "",
+        formatPhone(row["Fone"] || row["Telefone"] || ""),
+        row["Cidade"] || row["Município"] || "",
+        row["Modelo"] || "",
+        row["Endereço"] || row["Endereco"] || ""
+      )
+    }
 
-const insert = db.prepare(`
-INSERT INTO clients
-(nome, telefone, municipio, endereco, modelo, chassi, anoFabricacao)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-`)
-
-for (const row of rows) {
-
-const nome =
-row["Nome"] ||
-row["Cliente Principal"] ||
-row["cliente"] ||
-""
-
-let telefone = row["Fone"] || row["Telefone"] || ""
-
-if (telefone) {
-
-telefone = telefone.toString().replace(/\D/g,"")
-
-// adiciona código do Brasil
-if (!telefone.startsWith("55")) {
-telefone = "55" + telefone
-}
-
-}
-
-insert.run(
-nome,
-telefone,
-row["Cidade"] || "",
-row["Endereço"] || "",
-row["Modelo"] || "",
-row["Chassi"] || "",
-row["Ano"] || ""
-)
-
-}
-
-res.json({
-message:"Planilha importada com sucesso"
+    res.json({ message: "Importado com sucesso" })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({
+      message: "Erro ao importar planilha."
+    })
+  }
 })
 
-})
+// ======================================
+// FUNÇÕES AUXILIARES
+// ======================================
+function formatPhone(phone) {
+  let cleaned = String(phone).replace(/\D/g, "")
 
+  if (cleaned.length === 11 && !cleaned.startsWith("55")) {
+    cleaned = `55${cleaned}`
+  }
 
-// iniciar servidor
+  return cleaned
+}
+
+// ======================================
+// START
+// ======================================
 app.listen(3001, () => {
-
-console.log("Server running on port 3001")
-
+  console.log("Server rodando na porta 3001")
 })
