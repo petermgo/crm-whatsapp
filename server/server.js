@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 // ======================================
 // BANCO
 // ======================================
-const db = new Database("database.sqlite")
+const db = new Database("clients.db")
 
 db.prepare(`
 CREATE TABLE IF NOT EXISTS clients (
