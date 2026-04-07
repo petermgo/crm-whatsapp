@@ -11,7 +11,7 @@ const API_URL = "https://crm-whatsapp-w2an.onrender.com"
 // false = bloqueado
 // true = liberado
 // ======================================
-const APP_ACTIVE = true
+const APP_ACTIVE = false
 
 type Client = {
   id: number
