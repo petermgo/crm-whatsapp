@@ -15,7 +15,7 @@ app.use(express.json())
 // false = bloqueado
 // true = liberado
 // ======================================
-const APP_ACTIVE = false
+const APP_ACTIVE = true
 
 // Permite apenas a rota raiz quando bloqueado
 app.use((req, res, next) => {
